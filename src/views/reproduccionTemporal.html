@@ -23,11 +23,20 @@
 
 <script>
     var comillas = /&#34;/g;
-    let url =
+    let urlRecu =
         'https://www.datos.gov.co/resource/gt2j-8ykr.json?' +
         '$query=<%= urlDB[0] %>'.replace(comillas, '\"');
+    let urlMuer =
+        'https://www.datos.gov.co/resource/gt2j-8ykr.json?' +
+        '$query=<%= urlDB[1] %>'.replace(comillas, '\"');
+    let urlInf =
+        'https://www.datos.gov.co/resource/gt2j-8ykr.json?' +
+        '$query=<%= urlDB[2] %>'.replace(comillas, '\"');
 
-    var totalDatos = [];
+    var activos = [];
+    var totalDatosRecu = [];
+    var totalDatosMuer = [];
+    var totalDatosInf = [];
     var etiquetas = [];
 
     const anchoPantalla = parseInt(screen.width);
@@ -39,12 +48,15 @@
     main();
 
     async function main() {
-        await cargarDatos();
+        await cargarDatosRecu();
+        await cargarDatosMuer();
+        await cargarDatosInf();
+        await hallarActivos();
         crearGrafico();
     }
 
-    async function cargarDatos() {
-        this.totalDatos = [];
+    async function cargarDatosRecu() {
+        this.totalDatosRecu = [];
         this.etiquetas = [];
         this.anchoPantalla = parseInt(screen.width);
         this.tamBarras = 0
@@ -52,14 +64,18 @@
         var key = '<%= key %>';
 
         await axios
-            .get(url)
+            .get(urlRecu)
             .then(response => {
                 var i = 0;
 
                 response.data.forEach(element => {
                     if (element[key] != null) {
                         this.etiquetas.push(element[key].split(' ')[0]);
-                        this.totalDatos.push(parseInt(element['count']));
+                        if (this.totalDatosRecu.length === 0){
+                            this.totalDatosRecu.push(parseInt(element['count']));
+                        }else{
+                            this.totalDatosRecu.push(parseInt(element['count']) + this.totalDatosRecu[this.totalDatosRecu.length - 1]);
+                        }
                         i++;
                     }
                 })
@@ -69,9 +85,77 @@
         this.tamBarras = (this.anchoPantalla / c) * (1 - (20 / 100));
     }
 
+    async function cargarDatosMuer() {
+        this.totalDatosMuer = [];
+        this.etiquetas = [];
+        this.anchoPantalla = parseInt(screen.width);
+        this.tamBarras = 0
+        this.c = 100;
+        var key = '<%= key %>';
+
+        await axios
+            .get(urlMuer)
+            .then(response => {
+                var i = 0;
+
+                response.data.forEach(element => {
+                    if (element[key] != null) {
+                        this.etiquetas.push(element[key].split(' ')[0]);
+                        if (this.totalDatosMuer.length === 0){
+                            this.totalDatosMuer.push(parseInt(element['count']));
+                        }else{
+                            this.totalDatosMuer.push(parseInt(element['count']) + this.totalDatosMuer[this.totalDatosMuer.length - 1]);
+                        }
+                        i++;
+                    }
+                })
+            });
+
+
+        this.tamBarras = (this.anchoPantalla / c) * (1 - (20 / 100));
+    }
+
+    async function cargarDatosinf() {
+        this.totalDatosInf = [];
+        this.etiquetas = [];
+        this.anchoPantalla = parseInt(screen.width);
+        this.tamBarras = 0
+        this.c = 100;
+        var key = '<%= key %>';
+
+        await axios
+            .get(urlInf)
+            .then(response => {
+                var i = 0;
+
+                response.data.forEach(element => {
+                    if (element[key] != null) {
+                        this.etiquetas.push(element[key].split(' ')[0]);
+                        if (this.totalDatosInf.length === 0){
+                            this.totalDatosInf.push(parseInt(element['count']));
+                        }else{
+                            this.totalDatosInf.push(parseInt(element['count']) + this.totalDatosInf[this.totalDatosInf.length - 1]);
+                        }
+                        i++;
+                    }
+                })
+            });
+
+
+        this.tamBarras = (this.anchoPantalla / c) * (1 - (20 / 100));
+    }
+
+    function hallarActivos(){
+        var suma = 0;
+        for (var i = 0; i < this.totalDatosInf.length; i++){
+            suma = this.totalDatosInf[i] - this.totalDatosRecu[i] - this.totalDatosMuer[i];
+            this.activos.push(suma);
+        }
+    }
+
     function crearGrafico() {
         Vue.component("line-chart", {
-            extends: VueChartJs.Bar,
+            extends: VueChartJs.Line,
             props: ["data", "labels", "options"],
             mounted() {
                 this.renderLineChart();
@@ -93,7 +177,8 @@
                             labels: this.chartLabels,
                             datasets: [{
                                 backgroundColor: "rgb(255, 99, 132)",
-                                data: this.chartData
+                                data: this.chartData,
+                                fill: false
                             }]
                         },
                         this.chartOptions
@@ -112,14 +197,14 @@
             el: "#app",
             data: {
                 message: "Hello World",
-                dataChart: this.totalDatos.slice(this.i, this.f),
+                dataChart: this.activos.slice(this.i, this.f),
                 labelsChart: this.etiquetas.slice(this.i, this.f),
                 datosAdicionales: {
                     inicial: this.i,
                     final: this.f,
-                    tamañoTotal: this.totalDatos.length,
+                    tamañoTotal: this.activos.length,
                     cantidad: this.c,
-                    totDatos: this.totalDatos,
+                    totDatos: this.activos,
                     eti: this.etiquetas
                 },
                 optionsChart: {
@@ -133,7 +218,6 @@
                             }
                         }],
                         xAxes: [{
-                            barThickness: this.tamBarras,
                             ticks: {
                                 fontColor: 'black',
                             }

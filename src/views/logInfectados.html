@@ -25,7 +25,7 @@
     var comillas = /&#34;/g;
     let url =
         'https://www.datos.gov.co/resource/gt2j-8ykr.json?' +
-        '$query=<%= urlDB %>'.replace(comillas, '\"');
+        '$query=<%= urlDB[0] %>'.replace(comillas, '\"');
 
     var logaritmos = [];
     var totalDatos = [];
@@ -58,13 +58,7 @@
             .then(response => {
                 var i = 0;
 
-                var datos = response.data.sort(function (a, b) {
-                    if (a[key] != null & b[key] != null) {
-                        return moment(a[key], "DD-MM-YYYY").unix() - moment(b[key], "DD-MM-YYYY").unix()
-                    }
-                });
-
-                datos.forEach(element => {
+                response.data.forEach(element => {
                     if (element[key] != null) {
                         this.etiquetas.push(element[key].split(' ')[0]);
                         this.totalDatos.push(parseInt(element['count']));

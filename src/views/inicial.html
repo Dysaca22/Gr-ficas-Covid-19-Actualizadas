@@ -43,12 +43,12 @@
 
     var registros = [];
     var link =
-        `https://www.datos.gov.co/resource/gt2j-8ykr.json?$query=SELECT departamento_nom GROUP BY departamento_nom`;
+        `https://www.datos.gov.co/resource/gt2j-8ykr.json?$query=SELECT UPPER(departamento_nom) as departamento_nom GROUP BY departamento_nom`;
     registros = getJson(link);
 
-    var d = '<option selected>' + registros[0].departamento_nom + '</option>';
+    var d = '<option selected>' + "COLOMBIA" + '</option>';
 
-    for (var i = 1; i < registros.length; i++) {
+    for (var i = 0; i < registros.length; i++) {
         d += '<option>' + registros[i].departamento_nom + '</option>';
     }
     document.getElementById("region").innerHTML = d;

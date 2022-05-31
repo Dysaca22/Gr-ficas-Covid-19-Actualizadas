@@ -35,17 +35,13 @@ router.get('/consultaParcial', async function (req, res) {
     var reg = req.query.region;
     var {
         urlDB,
-        key
+        key,
+        pagina
     } = await estadistica(reg, est);
-    var pagina = '';
-    if (est != 'Logatirmo Infectados') {
-        pagina = 'consultaParcial.html';
-    } else {
-        pagina = 'logInfectados.html';
-    }
+    
     res.status(200).render(pagina, {
         title: `Consulta ${est} en ${reg}`,
-        urlDB: urlDB,
+        'urlDB': urlDB,
         key: key,
         region: reg,
         estadistica: est
@@ -53,39 +49,75 @@ router.get('/consultaParcial', async function (req, res) {
 });
 
 function estadistica(reg, est) {
-    urlDB = '';
+    urlDB = [];
     key = '';
     switch (est) {
         case 'Infectados':
-            urlDB = 'SELECT fecha_inicio_sintomas, count(*) ' +
-                `WHERE departamento_nom = "${reg}" GROUP BY fecha_inicio_sintomas ` +
-                'ORDER BY fecha_inicio_sintomas';
+            urlDB = ['SELECT fecha_inicio_sintomas, count(*) ' +
+                getDepartOption(reg) + 
+                'GROUP BY fecha_inicio_sintomas ' +
+                'ORDER BY fecha_inicio_sintomas'];
             key = 'fecha_inicio_sintomas';
+            pagina = 'consultaParcial.html';
             break;
         case 'Recuperados':
-            urlDB = 'SELECT fecha_recuperado, count(*) ' +
-                `WHERE departamento_nom = "${reg}" AND recuperado = "Recuperado" ` +
+            urlDB = ['SELECT fecha_recuperado, count(*) ' +
+                getDepartOption(reg) + 
+                'AND recuperado = "Recuperado" ' +
                 'GROUP BY fecha_recuperado ' +
-                'ORDER BY fecha_recuperado';
+                'ORDER BY fecha_recuperado'];
             key = 'fecha_recuperado';
+            pagina = 'consultaParcial.html';
             break;
         case 'Muertos':
-            urlDB = 'SELECT fecha_muerte, count(*) ' +
-                `WHERE departamento_nom = "${reg}" AND recuperado = "Fallecido" ` +
+            urlDB = ['SELECT fecha_muerte, count(*) ' +
+                getDepartOption(reg) +
+                'AND recuperado = "Fallecido" ' +
                 'GROUP BY fecha_muerte ' +
-                'ORDER BY fecha_muerte';
+                'ORDER BY fecha_muerte'];
             key = 'fecha_muerte';
+            pagina = 'consultaParcial.html';
             break;
         case 'Logatirmo Infectados':
-            urlDB = 'SELECT fecha_reporte_web, count(*) ' +
-                `WHERE departamento_nom = "${reg}" GROUP BY fecha_reporte_web ` +
-                'ORDER BY fecha_reporte_web';
+            urlDB = ['SELECT fecha_reporte_web, count(*) ' +
+                getDepartOption(reg) +
+                'GROUP BY fecha_reporte_web ' +
+                'ORDER BY fecha_reporte_web'];
             key = 'fecha_reporte_web';
+            pagina = 'logInfectados.html';
+            break;
+        case 'Reproducción Temporal':
+            urlDBRecu = 'SELECT fecha_reporte_web count(*) ' + 
+                getDepartOption(reg) +
+                'AND recuperado = "Recuperado" ' +
+                'GROUP BY fecha_reporte_web ' +
+                'ORDER BY fecha_reporte_web';
+            urlDBMuer = 'SELECT fecha_reporte_web count(*) ' + 
+                getDepartOption(reg) +
+                'AND recuperado = "Fallecido" ' +
+                'GROUP BY fecha_reporte_web ' +
+                'ORDER BY fecha_reporte_web';
+            urlDBInf = 'SELECT fecha_reporte_web count(*) ' + 
+                getDepartOption(reg) +
+                'GROUP BY fecha_reporte_web ' +
+                'ORDER BY fecha_reporte_web';
+            urlDB = [urlDBRecu, urlDBMuer, urlDBInf];
+            key = 'fecha_reporte_web';
+            pagina = 'reproduccionTemporal';
             break;
     }
     return {
         urlDB,
-        key
+        key,
+        pagina
+    }
+}
+
+function getDepartOption(reg){
+    if (reg === "COLOMBIA"){
+        return "";
+    }else{
+        return `WHERE (departamento_nom = "${reg.toUpperCase()}" OR departamento_nom = "${reg.toLowerCase()}") `;
     }
 }
 
