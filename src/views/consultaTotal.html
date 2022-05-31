@@ -1,0 +1,92 @@
+<%- include("./parts/header.html"); %>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col">
+            <table id="tablaReportes" class="table align-middle table-striped">
+
+            </table>
+        </div>
+    </div>
+    <div class="row justify-content-center">
+        <div class="col col-1">
+            <input type="button" class="btn btn-success" value="Anterior" onclick="asignarValores(10)">
+        </div>
+        <div class="col col-1">
+            <input type="button" class="btn btn-success" value="Siguiente" onclick="asignarValores(-10)">
+        </div>
+        <div class="col col-2" id="pag">
+
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript" language="javascript" src="https://code.jquery.com/jquery-3.5.1.js"></script>
+<script>
+    var link = `https://www.datos.gov.co/resource/gt2j-8ykr.json?$query=SELECT max(id_de_caso) as maximo`;
+    var registros = getJson(link);
+    var maxPaginas = Math.ceil(registros[0].maximo / 10);
+    var pagActual = 2;
+
+    var maxId = parseInt(registros[0].maximo) + 1;
+    var id = maxId - 10;
+    asignarValores(10);
+
+    function getJson(url) {
+        return JSON.parse($.ajax({
+            type: 'GET',
+            url: url,
+            dataType: 'json',
+            global: false,
+            async: false,
+            success: function (data) {
+                return data;
+            }
+        }).responseText);
+    }
+
+    function asignarValores(c) {
+        if (pagActual - c / 10 <= 0 || pagActual - c / 10 > maxPaginas) {
+            return;
+        }
+        id = id + c;
+
+        var registros = [];
+        var link =
+            `https://www.datos.gov.co/resource/gt2j-8ykr.json?$query=SELECT * WHERE id_de_caso < ${id} ORDER BY id_de_caso DESC LIMIT 10`;
+        registros = getJson(link);
+
+        var d = '<thead class="table-dark">' +
+            '<tr>' +
+            '<th>ID</th>' +
+            '<th>EDAD</th>' +
+            '<th>SEXO</th>' +
+            '<th>ESTADO</th>' +
+            '<th>FECHA REPORTE WEB</th>' +
+            '<th>DEPARTAMENTO</th>' +
+            '<th>CIUDAD/MUNICIPIO</th>' +
+            '<th>FECHA INICIO SINTOMAS</th>' +
+            '<th>FECHA RECUPERACIÓN / MUERTE</th>' +
+            '</tr>' +
+            '</thead>' +
+            '<tbody style="white-space:nowrap;">';
+
+        for (var i = 0; i < registros.length; i++) {
+            d += '<tr>' +
+                '<td>' + registros[i].id_de_caso + '</td>' +
+                '<td>' + registros[i].edad + '</td>' +
+                '<td>' + registros[i].sexo + '</td>' +
+                '<td>' + registros[i].recuperado + '</td>' +
+                '<td>' + registros[i].fecha_reporte_web + '</td>' +
+                '<td>' + registros[i].departamento_nom + '</td>' +
+                '<td>' + registros[i].ciudad_municipio_nom + '</td>' +
+                '<td>' + registros[i].fecha_inicio_sintomas + '</td>' +
+                '<td>' + (registros[i].fecha_recuperado == undefined ? (registros[i].fecha_muerte == undefined ? '' : registros[i].fecha_muerte) : registros[i].fecha_recuperado) + '</td>' +
+                '</tr>';
+        }
+        d += '</tbody>';
+        document.getElementById("tablaReportes").innerHTML = d;
+        pagActual -= c / 10;
+        document.getElementById("pag").innerHTML = pagActual + ' de ' + maxPaginas + ' páginas';
+    }
+</script>
+<%- include("./parts/footer.html"); %>

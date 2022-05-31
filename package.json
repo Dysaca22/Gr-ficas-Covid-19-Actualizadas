@@ -1,0 +1,29 @@
+{
+  "name": "prueba",
+  "version": "1.0.0",
+  "description": "Aplicación simple para aprender el uso de node js, express y mariaDB, con HTML",
+  "main": "index.js",
+  "dependencies": {
+    "chart.js": "^3.6.0",
+    "ejs": "^3.1.6",
+    "express": "^4.17.1",
+    "mariadb": "^2.5.4",
+    "morgan": "^1.10.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.14"
+  },
+  "scripts": {
+    "dev": "nodemon src/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Dysaca22/aprendiendo_node_mariaDB.git"
+  },
+  "author": "Dylan Cantillo",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Dysaca22/aprendiendo_node_mariaDB/issues"
+  },
+  "homepage": "https://github.com/Dysaca22/aprendiendo_node_mariaDB#readme"
+}

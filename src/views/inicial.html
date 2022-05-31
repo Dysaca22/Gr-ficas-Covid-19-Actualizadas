@@ -1,0 +1,56 @@
+<%- include("./parts/header.html"); %>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-6 offset-md-3">
+            <form id="form1" action='\consultaParcial' method="GET">
+                <h1>Estudio de Covid-19 por Sectores</h1>
+                <div class="mb-3">
+                    <label for="region">Departamento</label>
+                    <select id="region" class="form-control" name="region">
+
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="estadistica">Estadistica</label>
+                    <select id="estadistica" class="form-control mb-3" name="estadistica">
+                        <option selected>Infectados</option>
+                        <option>Recuperados</option>
+                        <option>Muertos</option>
+                        <option>Logatirmo Infectados</option>
+                        <option>Reproducción Temporal</option>
+                        <option>Actvos + Activos sin Reporte</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-success">Consulta Parcial</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function getJson(url) {
+        return JSON.parse($.ajax({
+            type: 'GET',
+            url: url,
+            dataType: 'json',
+            global: false,
+            async: false,
+            success: function (data) {
+                return data;
+            }
+        }).responseText);
+    }
+
+    var registros = [];
+    var link =
+        `https://www.datos.gov.co/resource/gt2j-8ykr.json?$query=SELECT departamento_nom GROUP BY departamento_nom`;
+    registros = getJson(link);
+
+    var d = '<option selected>' + registros[0].departamento_nom + '</option>';
+
+    for (var i = 1; i < registros.length; i++) {
+        d += '<option>' + registros[i].departamento_nom + '</option>';
+    }
+    document.getElementById("region").innerHTML = d;
+</script>
+<%- include("./parts/footer.html"); %>

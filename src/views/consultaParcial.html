@@ -1,0 +1,188 @@
+<%- include("./parts/header.html"); %>
+<div class="container-fluid no-gutters">
+    <div id="app">
+        <div class="row">
+            <div class="col-12">
+                <line-chart :data="dataChart" :labels="labelsChart" :options="optionsChart">
+                </line-chart>
+            </div>
+        </div>
+        <div class="row justify-content-center">
+            <div class="col col-2">
+                <button class="btn btn-success" v-on:click="changeData(-1)">Fechas Anteriores</button>
+            </div>
+            <div class="col col-2">
+                <button class="btn btn-success" v-on:click="fullData">Total Fechas</button>
+            </div>
+            <div class="col col-2">
+                <button class="btn btn-success" v-on:click="changeData(+1)">Fechas Siguientes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    var comillas = /&#34;/g;
+    let url =
+        'https://www.datos.gov.co/resource/gt2j-8ykr.json?' +
+        '$query=<%= urlDB %>'.replace(comillas, '\"');
+
+    var totalDatos = [];
+    var etiquetas = [];
+
+    const anchoPantalla = parseInt(screen.width);
+    var tamBarras = 0;
+    var c = 100;
+    var i = 0;
+    var f = c + i;
+
+    main();
+
+    async function main() {
+        await cargarDatos();
+        crearGrafico();
+    }
+
+    async function cargarDatos() {
+        this.totalDatos = [];
+        this.etiquetas = [];
+        this.anchoPantalla = parseInt(screen.width);
+        this.tamBarras = 0
+        this.c = 100;
+        var key = '<%= key %>';
+
+        await axios
+            .get(url)
+            .then(response => {
+                var i = 0;
+
+                response.data.forEach(element => {
+                    if (element[key] != null) {
+                        this.etiquetas.push(element[key].split(' ')[0]);
+                        this.totalDatos.push(parseInt(element['count']));
+                        i++;
+                    }
+                })
+            });
+
+
+        this.tamBarras = (this.anchoPantalla / c) * (1 - (20 / 100));
+    }
+
+    function crearGrafico() {
+        Vue.component("line-chart", {
+            extends: VueChartJs.Bar,
+            props: ["data", "labels", "options"],
+            mounted() {
+                this.renderLineChart();
+            },
+            computed: {
+                chartData: function () {
+                    return this.data;
+                },
+                chartLabels: function () {
+                    return this.labels;
+                },
+                chartOptions: function () {
+                    return this.options;
+                }
+            },
+            methods: {
+                renderLineChart: function () {
+                    this.renderChart({
+                            labels: this.chartLabels,
+                            datasets: [{
+                                backgroundColor: "rgb(255, 99, 132)",
+                                data: this.chartData
+                            }]
+                        },
+                        this.chartOptions
+                    );
+                }
+            },
+            watch: {
+                data: function () {
+                    this._chart.destroy();
+                    this.renderLineChart();
+                }
+            }
+        });
+
+        var vm = new Vue({
+            el: "#app",
+            data: {
+                message: "Hello World",
+                dataChart: this.totalDatos.slice(this.i, this.f),
+                labelsChart: this.etiquetas.slice(this.i, this.f),
+                datosAdicionales: {
+                    inicial: this.i,
+                    final: this.f,
+                    tamañoTotal: this.totalDatos.length,
+                    cantidad: this.c,
+                    totDatos: this.totalDatos,
+                    eti: this.etiquetas
+                },
+                optionsChart: {
+                    legend: {
+                        display: false
+                    },
+                    scales: {
+                        yAxes: [{
+                            ticks: {
+                                fontColor: 'black'
+                            }
+                        }],
+                        xAxes: [{
+                            barThickness: this.tamBarras,
+                            ticks: {
+                                fontColor: 'black',
+                            }
+                        }]
+                    },
+                    responsive: true,
+                    maintainAspectRatio: false,
+                }
+            },
+            methods: {
+                changeData: function (valor) {
+                    if (this.datosAdicionales.final + valor * this.datosAdicionales.cantidad > this
+                        .datosAdicionales.tamañoTotal) {
+                        this.datosAdicionales.inicial = this.datosAdicionales.tamañoTotal - this
+                            .datosAdicionales.cantidad;
+                        this.datosAdicionales.final = this.datosAdicionales.tamañoTotal;
+                    } else if (this.datosAdicionales.inicial + valor * this.datosAdicionales.cantidad < 0) {
+                        this.datosAdicionales.inicial = 0;
+                        this.datosAdicionales.final = this.datosAdicionales.cantidad;
+                    } else {
+                        this.datosAdicionales.inicial += valor * this.datosAdicionales.cantidad;
+                        this.datosAdicionales.final += valor * this.datosAdicionales.cantidad;
+                    }
+                    this.dataChart = this.datosAdicionales.totDatos.slice(this.datosAdicionales.inicial,
+                        this.datosAdicionales.final);
+                    this.labelsChart = this.datosAdicionales.eti.slice(this.datosAdicionales.inicial,
+                        this.datosAdicionales.final);
+                    this.optionsChart.scales.xAxes[0].barThickness = ajustarBarras(this
+                        .datosAdicionales.cantidad);
+                },
+                fullData: function () {
+                    this.datosAdicionales.inicial = 0;
+                    this.datosAdicionales.final = this.datosAdicionales.tamañoTotal;
+                    this.optionsChart.scales.xAxes[0].barThickness = ajustarBarras(this
+                        .datosAdicionales.tamañoTotal);
+                    this.dataChart = this.datosAdicionales.totDatos.slice(this.datosAdicionales.inicial,
+                        this.datosAdicionales.final);
+                    this.labelsChart = this.datosAdicionales.eti.slice(this.datosAdicionales.inicial,
+                        this.datosAdicionales.final);
+                    this.datosAdicionales.inicial = -this.datosAdicionales.cantidad;
+                    this.datosAdicionales.final = 0;
+                }
+            }
+        });
+    }
+
+    function ajustarBarras(c) {
+        this.tamBarras = (this.anchoPantalla / c) * (1 - (30 / 100));
+        return this.tamBarras;
+    }
+</script>
+<%- include("./parts/footer.html"); %>
